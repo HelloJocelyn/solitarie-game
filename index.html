@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solitaire - 纸牌接龙</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <h1>Solitaire - 纸牌接龙</h1>
+            <div class="game-controls">
+                <button id="new-game" class="btn">新游戏</button>
+                <button id="undo" class="btn">撤销</button>
+                <div class="score">
+                    <span>得分: <span id="score">0</span></span>
+                    <span>时间: <span id="timer">00:00</span></span>
+                </div>
+            </div>
+        </header>
+
+        <main class="game-board">
+            <!-- 牌堆区域 -->
+            <div class="stock-area">
+                <div class="stock-pile" id="stock-pile">
+                    <div class="card-back"></div>
+                </div>
+                <div class="waste-pile" id="waste-pile"></div>
+            </div>
+
+            <!-- 基础牌堆区域 -->
+            <div class="foundation-area">
+                <div class="foundation-pile" id="foundation-hearts"></div>
+                <div class="foundation-pile" id="foundation-diamonds"></div>
+                <div class="foundation-pile" id="foundation-clubs"></div>
+                <div class="foundation-pile" id="foundation-spades"></div>
+            </div>
+
+            <!-- 游戏区域 -->
+            <div class="tableau-area">
+                <div class="tableau-column" id="column-0"></div>
+                <div class="tableau-column" id="column-1"></div>
+                <div class="tableau-column" id="column-2"></div>
+                <div class="tableau-column" id="column-3"></div>
+                <div class="tableau-column" id="column-4"></div>
+                <div class="tableau-column" id="column-5"></div>
+                <div class="tableau-column" id="column-6"></div>
+            </div>
+        </main>
+
+        <div class="game-overlay" id="game-overlay" style="display: none;">
+            <div class="overlay-content">
+                <h2>游戏结束!</h2>
+                <p>恭喜你完成了游戏!</p>
+                <p>最终得分: <span id="final-score">0</span></p>
+                <p>用时: <span id="final-time">00:00</span></p>
+                <button id="play-again" class="btn">再玩一次</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/card.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
