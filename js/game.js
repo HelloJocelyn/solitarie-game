@@ -14,6 +14,7 @@ class SolitaireGame {
         this.score = 0;
         this.startTime = null;
         this.timerInterval = null;
+        this.dragging = null; // { card, source: { type: 'waste'|'tableau', index:number } }
 
         this.dom = {
             stock: document.getElementById('stock-pile'),
@@ -30,6 +31,7 @@ class SolitaireGame {
         };
 
         this.handleClicks();
+        this.setupDropTargets();
     }
 
     newGame() {
@@ -74,7 +76,7 @@ class SolitaireGame {
         });
 
         // Simple waste -> foundation/tableau moves via double click
-        this.dom.waste.addEventListener('dblclick', () => {
+        this.dom.waste.addEventListener('click', () => {
             const card = this.waste[this.waste.length - 1];
             if (!card) return;
             if (this.tryMoveToFoundation(card)) {
@@ -89,7 +91,7 @@ class SolitaireGame {
 
         // Tableau column click: try auto moves for top face-up card
         this.dom.tableau.forEach((colEl, colIdx) => {
-            colEl.addEventListener('dblclick', () => {
+            colEl.addEventListener('click', () => {
                 const col = this.tableau[colIdx];
                 if (!col.length) return;
                 const card = col[col.length - 1];
@@ -105,6 +107,104 @@ class SolitaireGame {
                 }
                 this.renderAll();
             });
+        });
+    }
+
+    setupDropTargets() {
+        // Foundations as drop targets
+        for (const suit of ['hearts','diamonds','clubs','spades']) {
+            const el = this.dom.foundations[suit];
+            el.addEventListener('dragover', (e) => e.preventDefault());
+            el.addEventListener('dragenter', (e) => {
+                if (!this.dragging) return;
+                const top = this.foundations[suit][this.foundations[suit].length - 1];
+                if (this.dragging.card.canPlaceOnFoundation(top)) {
+                    el.classList.add('valid-drop');
+                } else {
+                    el.classList.add('invalid-drop');
+                }
+            });
+            el.addEventListener('dragleave', () => {
+                el.classList.remove('valid-drop', 'invalid-drop');
+            });
+            el.addEventListener('drop', (e) => {
+                e.preventDefault();
+                el.classList.remove('valid-drop', 'invalid-drop');
+                if (!this.dragging) return;
+                const { card, source } = this.dragging;
+                const pile = this.foundations[suit];
+                const top = pile[pile.length - 1];
+                if (!card.canPlaceOnFoundation(top)) return;
+                // remove from source
+                if (source.type === 'waste') {
+                    this.waste.pop();
+                } else if (source.type === 'tableau') {
+                    this.tableau[source.index].pop();
+                    this.flipTopIfNeeded(this.tableau[source.index]);
+                }
+                pile.push(card);
+                this.score += 10;
+                this.dragging = null;
+                this.renderAll();
+            });
+        }
+
+        // Tableau columns as drop targets
+        this.dom.tableau.forEach((colEl, idx) => {
+            colEl.addEventListener('dragover', (e) => e.preventDefault());
+            colEl.addEventListener('dragenter', () => {
+                if (!this.dragging) return;
+                const column = this.tableau[idx];
+                const top = column[column.length - 1];
+                if (this.dragging.card.canPlaceOnTableau(top)) {
+                    colEl.classList.add('valid-drop');
+                } else {
+                    colEl.classList.add('invalid-drop');
+                }
+            });
+            colEl.addEventListener('dragleave', () => {
+                colEl.classList.remove('valid-drop', 'invalid-drop');
+            });
+            colEl.addEventListener('drop', (e) => {
+                e.preventDefault();
+                colEl.classList.remove('valid-drop', 'invalid-drop');
+                if (!this.dragging) return;
+                const { card, source } = this.dragging;
+                const column = this.tableau[idx];
+                const top = column[column.length - 1];
+                if (!card.canPlaceOnTableau(top)) return;
+                // remove from source
+                if (source.type === 'waste') {
+                    this.waste.pop();
+                } else if (source.type === 'tableau') {
+                    this.tableau[source.index].pop();
+                    this.flipTopIfNeeded(this.tableau[source.index]);
+                }
+                column.push(card);
+                this.score += 5;
+                this.dragging = null;
+                this.renderAll();
+            });
+        });
+    }
+
+    bindDraggable(card, source) {
+        if (!card.element) return;
+        if (!card.faceUp) return;
+        // Only allow dragging top of waste or top of tableau
+        card.element.draggable = true;
+        if (card.element._dragBound) return;
+        card.element._dragBound = true;
+        
+        card.element.addEventListener('dragstart', () => {
+            this.dragging = { card, source };
+            card.element.classList.add('dragging');
+        });
+        card.element.addEventListener('dragend', () => {
+            if (this.dragging && this.dragging.card === card) {
+                this.dragging = null;
+            }
+            card.element.classList.remove('dragging');
         });
     }
 
@@ -175,6 +275,7 @@ class SolitaireGame {
             top.faceUp = true;
             top.updateElement();
             top.element.style.position = 'relative';
+            this.bindDraggable(top, { type: 'waste' });
             this.dom.waste.appendChild(top.element);
         }
     }
@@ -189,6 +290,7 @@ class SolitaireGame {
                 top.faceUp = true;
                 top.updateElement();
                 top.element.style.position = 'relative';
+                // foundations not draggable for now
                 el.appendChild(top.element);
             }
         }
@@ -205,6 +307,11 @@ class SolitaireGame {
                 card.element.style.top = `${i * 26}px`;
                 colEl.appendChild(card.element);
             });
+            // make only top face-up draggable
+            const top = column[column.length - 1];
+            if (top && top.faceUp) {
+                this.bindDraggable(top, { type: 'tableau', index: idx });
+            }
         });
     }
 

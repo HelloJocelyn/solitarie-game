@@ -7,14 +7,19 @@
         game.newGame();
     }
 
+    // i18n init
+    const langSelect = document.getElementById('lang-select');
+    if (window.i18n) {
+        window.i18n.initLanguage(langSelect);
+    }
+
     document.getElementById('new-game').addEventListener('click', () => {
         start();
     });
 
     // Simple undo placeholder (no-op for now)
     document.getElementById('undo').addEventListener('click', () => {
-        // TODO: implement undo stack
-        alert('撤销功能稍后提供');
+        alert(window.i18n ? window.i18n.t('undo', window.i18n.getCurrentLang()) : 'Undo');
     });
 
     // Overlay button
